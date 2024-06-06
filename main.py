@@ -375,8 +375,8 @@ def main():
 
     # PyTorch on WindowsでDataLoaderの開始が遅い原因と対策
     # ref：https://qiita.com/sinpcw/items/18259db353a315d18ce8
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, persistent_workers=(os.name == 'nt'))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, persistent_workers=(os.name == 'nt'))
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4, persistent_workers=(os.name == 'nt'))
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=(os.name == 'nt'))
 
     model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device)
 
