@@ -389,8 +389,10 @@ def main():
 
     # PyTorch on WindowsでDataLoaderの開始が遅い原因と対策
     # ref：https://qiita.com/sinpcw/items/18259db353a315d18ce8
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4, persistent_workers=(os.name == 'nt'))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=(os.name == 'nt'))
+    # PyTorchでの学習・推論を高速化するコツ集
+    # ref：https://qiita.com/sugulu_Ogawa_ISID/items/62f5f7adee083d96a587
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
 
     # mlrunsディレクトリ指定
     tracking_uri = './mlruns'    # パス
