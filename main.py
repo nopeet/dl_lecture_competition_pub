@@ -337,7 +337,7 @@ def train(model, dataloader, optimizer, criterion, device):
 
         # pred = model(image, question)
         # loss = criterion(pred, mode_answer.squeeze())
-        with torch.amp.autocast('cuda', dtype=torch.float16):
+        with torch.amp.autocast(device_type=device, dtype=torch.float16):
             pred = model(image, question)
             loss = criterion(pred, mode_answer.squeeze())
         accuracy = VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
