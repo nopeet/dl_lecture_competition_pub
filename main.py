@@ -319,7 +319,7 @@ def train(model, dataloader, optimizer, criterion, device):
     total_loss = 0
     total_acc = 0
     simple_acc = 0
-    batch = 0
+    batch = 1
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
@@ -334,13 +334,11 @@ def train(model, dataloader, optimizer, criterion, device):
         loss.backward()
         optimizer.step()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch
-            mlflow.log_metric("loss", f"{loss:3f}", step=(batch // 100))
-            mlflow.log_metric("accuracy", f"{accuracy:3f}", step=(batch // 100))
-            print(
-                f"loss: {loss:3f} accuracy: {accuracy:3f} [{current} / {len(dataloader)}]"
-        )
+        _loss, current = loss.item(), batch
+        mlflow.log_metric("loss", f"{_loss:3f}", step=(batch // 100))
+        mlflow.log_metric("accuracy", f"{accuracy:3f}", step=(batch // 100))
+        print(
+            f"loss: {_loss:3f} accuracy: {accuracy:3f} [{current} / {len(dataloader)}]"
         batch += 1
 
         total_loss += loss.item()
