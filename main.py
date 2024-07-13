@@ -1,3 +1,5 @@
+import apex
+from apex import amp
 import datetime
 import os
 import re
@@ -333,7 +335,10 @@ def train(model, dataloader, optimizer, criterion, device):
         accuracy = VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
 
         optimizer.zero_grad()
-        loss.backward()
+        # loss.backward()
+        # AMP Train your model
+        with amp.scale_loss(loss, optimizer) as scaled_loss:
+            scaled_loss.backward()
         optimizer.step()
 
         _loss = loss.item()
@@ -412,7 +417,12 @@ def main():
     criterion = nn.CrossEntropyLoss()
     lr = 0.001
     weight_decay = 1e-5
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # モデル、学習率とoptimizerを設定
+    optimizer = apex.optimizers.FusedLAMB(model.parameters(), lr=lr)
+    # Initialization
+    opt_level = 'O1'
+    model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
 
     with mlflow.start_run():
         params = {
@@ -422,6 +432,7 @@ def main():
             "loss_function": criterion.__class__.__name__,
             "metric_function": "VQA_criterion",
             "optimizer": optimizer.__class__.__name__,
+            "opt_level": opt_level,
             "device": device
         }
         # Log training parameters.
