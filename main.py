@@ -435,7 +435,6 @@ def main():
             "loss_function": criterion.__class__.__name__,
             "metric_function": "VQA_criterion",
             "optimizer": optimizer.__class__.__name__,
-            "opt_level": opt_level,
             "device": device
         }
         # Log training parameters.
