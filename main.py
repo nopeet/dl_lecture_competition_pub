@@ -401,7 +401,7 @@ def main():
 
     # experiment指定
     dt_now = datetime.datetime.now()
-    experiment_name = 'experiment' + dt_now.strftime('%m%d%H%M')   # experimentの名前
+    experiment_name = 'experiment_' + dt_now.strftime('%Y%m%d%H%M')   # experimentの名前
     mlflow.set_experiment(experiment_name)
 
     model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device, non_blocking=True)
