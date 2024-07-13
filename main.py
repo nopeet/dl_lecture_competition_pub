@@ -423,7 +423,7 @@ def main():
         mlflow.log_params(params)
 
         # Log model summary.
-        with open("model_summary.txt", "w") as f:
+        with open("model_summary.txt", "w", encoding='utf-8') as f:
             f.write(str(summary(model)))
         mlflow.log_artifact("model_summary.txt")
 
