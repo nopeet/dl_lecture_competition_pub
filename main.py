@@ -325,7 +325,7 @@ def train(model, dataloader, optimizer, criterion, device):
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
         image, question, answer, mode_answer = \
-            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+            image.to(device, non_blocking=True), question.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
@@ -361,7 +361,7 @@ def eval(model, dataloader, optimizer, criterion, device):
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
         image, question, answer, mode_answer = \
-            image.to(device), question.to(device), answers.to(device), mode_answer.to(device)
+            image.to(device, non_blocking=True), question.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
@@ -402,7 +402,7 @@ def main():
     experiment_name = 'experiment071535'    # experimentの名前
     mlflow.set_experiment(experiment_name)
 
-    model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device)
+    model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device, non_blocking=True)
 
     # optimizer / criterion
     # num_epoch = 20
@@ -446,7 +446,7 @@ def main():
     model.eval()
     submission = []
     for image, question in test_loader:
-        image, question = image.to(device), question.to(device)
+        image, question = image.to(device, non_blocking=True), question.to(device, non_blocking=True)
         pred = model(image, question)
         pred = pred.argmax(1).cpu().item()
         submission.append(pred)
