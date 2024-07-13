@@ -12,11 +12,14 @@ import pandas
 import torch
 from torchinfo import summary
 import torch.nn as nn
+import torchtext
 import torchtext.transforms as T
 from torchtext.vocab import build_vocab_from_iterator
 import torchvision
 from torchvision import transforms
 
+
+torchtext.disable_torchtext_deprecation_warning()
 
 def set_seed(seed):
     random.seed(seed)
@@ -115,12 +118,13 @@ class VQADataset(torch.utils.data.Dataset):
         self.idx2answer = {}
 
         # 質問文に含まれる単語を辞書に追加
+        words = []
         for question in self.df["question"]:
             question = process_text(question)
-            words = question.split(" ")
-            # 単語辞書作成
-            question_vocab = build_vocab_from_iterator(words, specials=('<unk>', '<pad>'))
-            question_vocab.set_default_index(question_vocab['<unk>'])
+            words += question.split(" ")
+        # 単語辞書作成
+        self.question_vocab = build_vocab_from_iterator(words, specials=('<unk>', '<pad>'))
+        self.question_vocab.set_default_index(self.question_vocab['<unk>'])
         #     for word in words:
         #         if word not in self.question2idx:
         #             self.question2idx[word] = len(self.question2idx)
