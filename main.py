@@ -391,8 +391,10 @@ def main():
     # deviceの設定
     set_seed(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"device: {device}")
 
     # dataloader / model
+    start = time.time()
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor()
@@ -400,13 +402,16 @@ def main():
     train_dataset = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=transform)
     test_dataset = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=transform, answer=False)
     test_dataset.update_dict(train_dataset)
+    print("Finished dataset initialization. duration: {:0.1f}sec".format(time.time() - start))
 
     # PyTorch on WindowsでDataLoaderの開始が遅い原因と対策
     # ref：https://qiita.com/sinpcw/items/18259db353a315d18ce8
     # PyTorchでの学習・推論を高速化するコツ集
     # ref：https://qiita.com/sugulu_Ogawa_ISID/items/62f5f7adee083d96a587
+    start = time.time()
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
+    print("Finishid loading data. duration: {:0.1f}sec".format(time.time() - start))
 
     # mlrunsディレクトリ指定
     tracking_uri = './mlruns'    # パス
