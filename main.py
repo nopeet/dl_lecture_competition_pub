@@ -397,8 +397,8 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
 
     # experiment指定
-    # experiment_name = 'experiment071512'    # experimentの名前
-    # mlflow.set_experiment(experiment_name)
+    experiment_name = 'experiment071535'    # experimentの名前
+    mlflow.set_experiment(experiment_name)
 
     model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device)
 
