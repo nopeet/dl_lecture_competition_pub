@@ -339,6 +339,7 @@ def train(model, dataloader, optimizer, criterion, device):
         mlflow.log_metric("accuracy", f"{accuracy:3f}", step=(batch // 100))
         print(
             f"loss: {_loss:3f} accuracy: {accuracy:3f} [{current} / {len(dataloader)}]"
+        )
         batch += 1
 
         total_loss += loss.item()
