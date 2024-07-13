@@ -390,6 +390,14 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4, persistent_workers=(os.name == 'nt'))
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4, persistent_workers=(os.name == 'nt'))
 
+    # mlrunsディレクトリ指定
+    tracking_uri = './mlruns'    # パス
+    mlflow.set_tracking_uri(tracking_uri)
+
+    # experiment指定
+    experiment_name = 'experiment071512'    # experimentの名前
+    mlflow.set_experiment(experiment_name)
+
     model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device)
 
     # optimizer / criterion
