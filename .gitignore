@@ -2,3 +2,5 @@
 .vscode/
 data/[tran, valid]*
 mlruns/
+model.pth
+submission.npy
