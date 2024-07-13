@@ -411,7 +411,7 @@ def main():
     start = time.time()
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count(), persistent_workers=(os.name == 'nt'), pin_memory=True)
-    print("Finishid loading data. duration: {:0.1f}sec".format(time.time() - start))
+    print("Finished loading data. duration: {:0.1f}sec".format(time.time() - start))
 
     # mlrunsディレクトリ指定
     tracking_uri = './mlruns'    # パス
