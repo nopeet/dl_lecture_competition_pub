@@ -319,7 +319,7 @@ def train(model, dataloader, optimizer, criterion, device):
     total_loss = 0
     total_acc = 0
     simple_acc = 0
-    batch = 1
+    current = 1
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
@@ -334,13 +334,13 @@ def train(model, dataloader, optimizer, criterion, device):
         loss.backward()
         optimizer.step()
 
-        _loss, current = loss.item(), batch
-        mlflow.log_metric("loss", f"{_loss:3f}", step=(batch // 100))
-        mlflow.log_metric("accuracy", f"{accuracy:3f}", step=(batch // 100))
+        _loss = loss.item()
+        mlflow.log_metric("loss", f"{_loss:3f}", step=current)
+        mlflow.log_metric("accuracy", f"{accuracy:3f}", step=current)
         print(
             f"loss: {_loss:3f} accuracy: {accuracy:3f} [{current} / {len(dataloader)}]"
         )
-        batch += 1
+        current += 1
 
         total_loss += loss.item()
         # total_acc += VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
