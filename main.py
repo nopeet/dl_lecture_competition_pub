@@ -12,14 +12,12 @@ import pandas
 import torch
 from torchinfo import summary
 import torch.nn as nn
-import torchtext
+import torchtext; torchtext.disable_torchtext_deprecation_warning()
 import torchtext.transforms as T
 from torchtext.vocab import build_vocab_from_iterator
 import torchvision
 from torchvision import transforms
 
-
-torchtext.disable_torchtext_deprecation_warning()
 
 def set_seed(seed):
     random.seed(seed)
