@@ -5,9 +5,11 @@ import time
 from statistics import mode
 
 from PIL import Image
+import mlflow
 import numpy as np
 import pandas
 import torch
+from torchinfo import summary
 import torch.nn as nn
 import torchvision
 from torchvision import transforms
@@ -172,7 +174,7 @@ def VQA_criterion(batch_pred: torch.Tensor, batch_answers: torch.Tensor):
     return total_acc / len(batch_pred)
 
 
-# 3. モデルのの実装
+# 3. モデルの実装
 # ResNetを利用できるようにしておく
 class BasicBlock(nn.Module):
     expansion = 1
@@ -317,6 +319,7 @@ def train(model, dataloader, optimizer, criterion, device):
     total_loss = 0
     total_acc = 0
     simple_acc = 0
+    batch = 0
 
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
@@ -325,13 +328,24 @@ def train(model, dataloader, optimizer, criterion, device):
 
         pred = model(image, question)
         loss = criterion(pred, mode_answer.squeeze())
+        accuracy = VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        if batch % 100 == 0:
+            loss, current = loss.item(), batch
+            mlflow.log_metric("loss", f"{loss:3f}", step=(batch // 100))
+            mlflow.log_metric("accuracy", f"{accuracy:3f}", step=(batch // 100))
+            print(
+                f"loss: {loss:3f} accuracy: {accuracy:3f} [{current} / {len(dataloader)}]"
+        )
+        batch += 1
+
         total_loss += loss.item()
-        total_acc += VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
+        # total_acc += VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
+        total_acc += accuracy # VQA accuracy
         simple_acc += (pred.argmax(1) == mode_answer).float().mean().item()  # simple accuracy
 
     return total_loss / len(dataloader), total_acc / len(dataloader), simple_acc / len(dataloader), time.time() - start
@@ -381,18 +395,42 @@ def main():
     model = VQAModel(vocab_size=len(train_dataset.question2idx)+1, n_answer=len(train_dataset.answer2idx)).to(device)
 
     # optimizer / criterion
-    num_epoch = 20
+    # num_epoch = 20
+    num_epoch = 1
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+    lr = 0.001
+    weight_decay = 1e-5
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    # train model
-    for epoch in range(num_epoch):
-        train_loss, train_acc, train_simple_acc, train_time = train(model, train_loader, optimizer, criterion, device)
-        print(f"【{epoch + 1}/{num_epoch}】\n"
-              f"train time: {train_time:.2f} [s]\n"
-              f"train loss: {train_loss:.4f}\n"
-              f"train acc: {train_acc:.4f}\n"
-              f"train simple acc: {train_simple_acc:.4f}")
+    with mlflow.start_run():
+        params = {
+            "epochs": num_epoch,
+            "learning_rate": lr,
+            "weight_decay": weight_decay,
+            "loss_function": criterion.__class__.__name__,
+            "metric_function": "VQA_criterion",
+            "optimizer": optimizer.__class__.__name__,
+            "device": device
+        }
+        # Log training parameters.
+        mlflow.log_params(params)
+
+        # Log model summary.
+        with open("model_summary.txt", "w") as f:
+            f.write(str(summary(model)))
+        mlflow.log_artifact("model_summary.txt")
+
+        # train model
+        for epoch in range(num_epoch):
+            train_loss, train_acc, train_simple_acc, train_time = train(model, train_loader, optimizer, criterion, device)
+            print(f"【{epoch + 1}/{num_epoch}】\n"
+                f"train time: {train_time:.2f} [s]\n"
+                f"train loss: {train_loss:.4f}\n"
+                f"train acc: {train_acc:.4f}\n"
+                f"train simple acc: {train_simple_acc:.4f}")
+
+        # Save the trained model to MLflow.
+        mlflow.pytorch.log_model(model, "model")
 
     # 提出用ファイルの作成
     model.eval()
