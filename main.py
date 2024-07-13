@@ -1,5 +1,3 @@
-import apex
-from apex import amp
 import datetime
 import os
 import re
@@ -325,21 +323,31 @@ def train(model, dataloader, optimizer, criterion, device):
     simple_acc = 0
     current = 1
 
+    # Automatic Mixed Precision (AMP)：PyTorchでの学習を高速化
+    # ref：https://qiita.com/bowdbeg/items/71c62cf8ef891d164ecd
+    # scaler for gpu training
+    init_scale = 2 ** 16 # 65536
+    # init_scale = 2 ** 12 # 4096
+    scaler = torch.cuda.amp.GradScaler(init_scale=init_scale)
+
     start = time.time()
     for image, question, answers, mode_answer in dataloader:
         image, question, answer, mode_answer = \
             image.to(device, non_blocking=True), question.to(device, non_blocking=True), answers.to(device, non_blocking=True), mode_answer.to(device, non_blocking=True)
 
-        pred = model(image, question)
-        loss = criterion(pred, mode_answer.squeeze())
+        # pred = model(image, question)
+        # loss = criterion(pred, mode_answer.squeeze())
+        with torch.amp.autocast('cuda', dtype=torch.float16):
+            pred = model(image, question)
+            loss = criterion(pred, mode_answer.squeeze())
         accuracy = VQA_criterion(pred.argmax(1), answers)  # VQA accuracy
 
         optimizer.zero_grad()
         # loss.backward()
-        # AMP Train your model
-        with amp.scale_loss(loss, optimizer) as scaled_loss:
-            scaled_loss.backward()
-        optimizer.step()
+        # optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         _loss = loss.item()
         mlflow.log_metric("loss", f"{_loss:3f}", step=current)
@@ -417,12 +425,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     lr = 0.001
     weight_decay = 1e-5
-    # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    # モデル、学習率とoptimizerを設定
-    optimizer = apex.optimizers.FusedLAMB(model.parameters(), lr=lr)
-    # Initialization
-    opt_level = 'O1'
-    model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     with mlflow.start_run():
         params = {
