@@ -150,9 +150,9 @@ class VQADataset(torch.utils.data.Dataset):
         dataset : Dataset
             訓練データのDataset
         """
-        self.question2idx = dataset.question2idx
+        # self.question2idx = dataset.question2idx
         self.answer2idx = dataset.answer2idx
-        self.idx2question = dataset.idx2question
+        # self.idx2question = dataset.idx2question
         self.idx2answer = dataset.idx2answer
 
     def __getitem__x(self, idx):
