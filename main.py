@@ -460,7 +460,7 @@ def main():
                 f"train simple acc: {train_simple_acc:.4f}")
 
         # Save the trained model to MLflow.
-        mlflow.pytorch.log_model(model, "model", extra_pip_requirements=["torch==2.3.1+cu118"])
+        mlflow.pytorch.log_model(model, "model")
 
     # 提出用ファイルの作成
     model.eval()
