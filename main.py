@@ -107,9 +107,9 @@ class VQADataset(torch.utils.data.Dataset):
         dataset : Dataset
             訓練データのDataset
         """
-        # self.question2idx = dataset.question2idx
+        self.question2idx = dataset.question2idx
         self.answer2idx = dataset.answer2idx
-        # self.idx2question = dataset.idx2question
+        self.idx2question = dataset.idx2question
         self.idx2answer = dataset.idx2answer
 
     def __getitem__(self, idx):
@@ -151,7 +151,6 @@ class VQADataset(torch.utils.data.Dataset):
 
         else:
             return image, torch.Tensor(question)
-
 
     def __len__(self):
         return len(self.df)
@@ -461,7 +460,7 @@ def main():
                 f"train simple acc: {train_simple_acc:.4f}")
 
         # Save the trained model to MLflow.
-        mlflow.pytorch.log_model(model, "model")
+        mlflow.pytorch.log_model(model, "model", extra_pip_requirements=["torch==2.3.1+cu118"])
 
     # 提出用ファイルの作成
     model.eval()
