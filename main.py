@@ -427,7 +427,8 @@ def main():
     # optimizer / criterion
     # num_epoch = 20
     num_epoch = 1
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
+    criterion = nn.KLDivLoss(reduction="batchmean")
     lr = 0.001
     weight_decay = 1e-5
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
