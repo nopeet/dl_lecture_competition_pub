@@ -14,6 +14,7 @@ from torchinfo import summary
 import torch.nn as nn
 import torchvision
 from torchvision import transforms
+from transformers import BertTokenizer, BertModel
 
 
 def set_seed(seed):
@@ -65,6 +66,26 @@ def process_text(text):
     return text
 
 
+class BertWrapper:
+    def __init__(self, model_name_or_path='bert-base-uncased', device=None):
+        # BERTの日本語モデル: 'cl-tohoku/bert-base-japanese-whole-word-masking'
+        # BERTの英語モデル: 'bert-base-uncased'
+        self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path)
+        self.model = BertModel.from_pretrained(model_name_or_path)
+        self.model.eval()
+
+        # if device is None:
+        #     device = "cuda" if torch.cuda.is_available() else "cpu"
+        # self.device = torch.device(device)
+        # self.model.to(device)
+
+    def get_embedding(self, text):
+        tokens = self.tokenizer(text, return_tensors='pt')
+        with torch.no_grad():
+            outputs = self.model(**tokens)
+        return outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+
+
 # 1. データローダーの作成
 class VQADataset(torch.utils.data.Dataset):
     def __init__(self, df_path, image_dir, transform=None, answer=True):
@@ -72,6 +93,7 @@ class VQADataset(torch.utils.data.Dataset):
         self.image_dir = image_dir  # 画像ファイルのディレクトリ
         self.df = pandas.read_json(df_path)  # 画像ファイルのパス，question, answerを持つDataFrame
         self.answer = answer
+        self.bart = BertWrapper()
 
         # question / answerの辞書を作成
         self.question2idx = {}
@@ -80,13 +102,13 @@ class VQADataset(torch.utils.data.Dataset):
         self.idx2answer = {}
 
         # 質問文に含まれる単語を辞書に追加
-        for question in self.df["question"]:
-            question = process_text(question)
-            words = question.split(" ")
-            for word in words:
-                if word not in self.question2idx:
-                    self.question2idx[word] = len(self.question2idx)
-        self.idx2question = {v: k for k, v in self.question2idx.items()}  # 逆変換用の辞書(question)
+        # for question in self.df["question"]:
+        #     question = process_text(question)
+        #     words = question.split(" ")
+        #     for word in words:
+        #         if word not in self.question2idx:
+        #             self.question2idx[word] = len(self.question2idx)
+        # self.idx2question = {v: k for k, v in self.question2idx.items()}  # 逆変換用の辞書(question)
 
         if self.answer:
             # 回答に含まれる単語を辞書に追加
@@ -134,14 +156,15 @@ class VQADataset(torch.utils.data.Dataset):
         """
         image = Image.open(f"{self.image_dir}/{self.df['image'][idx]}")
         image = self.transform(image)
-        question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
-        # question_words = self.df["question"][idx].split(" ")
-        question_words = process_text(self.df["question"][idx]).split(" ") # 質問文の前処理
-        for word in question_words:
-            try:
-                question[self.question2idx[word]] = 1  # one-hot表現に変換
-            except KeyError:
-                question[-1] = 1  # 未知語
+        # question = np.zeros(len(self.idx2question) + 1)  # 未知語用の要素を追加
+        # # question_words = self.df["question"][idx].split(" ")
+        # question_words = process_text(self.df["question"][idx]).split(" ") # 質問文の前処理
+        # for word in question_words:
+        #     try:
+        #         question[self.question2idx[word]] = 1  # one-hot表現に変換
+        #     except KeyError:
+        #         question[-1] = 1  # 未知語
+        question = self.bart.get_embedding([process_text(self.df["question"][idx])])
 
         if self.answer:
             answers = [self.answer2idx[process_text(answer["answer"])] for answer in self.df["answers"][idx]]
